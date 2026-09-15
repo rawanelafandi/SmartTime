@@ -7,10 +7,12 @@ namespace SmartTime.Services.Services;
 public class ProjectService : IProjectService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClockifyService _clockify;
 
-    public ProjectService(IUnitOfWork unitOfWork)
+    public ProjectService(IUnitOfWork unitOfWork, IClockifyService clockify)
     {
         _unitOfWork = unitOfWork;
+        _clockify = clockify;
     }
 
     public async Task<IReadOnlyList<Project>> GetAllAsync() =>
@@ -21,7 +23,9 @@ public class ProjectService : IProjectService
 
     public async Task<Project> CreateAsync(string name)
     {
-        var project = new Project { Name = name };
+        var clockifyProjectId = await _clockify.EnsureProjectAsync(name);
+
+        var project = new Project { Name = name, ClockifyProjectId = clockifyProjectId };
         await _unitOfWork.Repository<Project>().AddAsync(project);
         await _unitOfWork.SaveChangesAsync();
         return project;
@@ -31,6 +35,11 @@ public class ProjectService : IProjectService
     {
         var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
         if (project is null) return null;
+
+        if (project.ClockifyProjectId is not null)
+        {
+            await _clockify.UpdateProjectAsync(project.ClockifyProjectId, name);
+        }
 
         project.Name = name;
         _unitOfWork.Repository<Project>().Update(project);

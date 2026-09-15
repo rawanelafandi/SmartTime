@@ -7,10 +7,12 @@ namespace SmartTime.Services.Services;
 public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClockifyService _clockify;
 
-    public UserService(IUnitOfWork unitOfWork)
+    public UserService(IUnitOfWork unitOfWork, IClockifyService clockify)
     {
         _unitOfWork = unitOfWork;
+        _clockify = clockify;
     }
 
     public async Task<IReadOnlyList<AppUser>> GetAllAsync() =>
@@ -21,7 +23,16 @@ public class UserService : IUserService
 
     public async Task<AppUser> CreateAsync(string name, string email)
     {
-        var user = new AppUser { Name = name, Email = email };
+        // Clockify can't create new users via API - only find existing workspace members.
+        // So "create" succeeds only if this email already belongs to a Clockify user.
+        var clockifyUserId = await _clockify.FindUserIdByEmailAsync(email);
+        if (clockifyUserId is null)
+        {
+            throw new InvalidOperationException(
+                $"No Clockify user found with email '{email}'. They must already be a member of the Clockify workspace.");
+        }
+
+        var user = new AppUser { Name = name, Email = email, ClockifyUserId = clockifyUserId };
         await _unitOfWork.Repository<AppUser>().AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
         return user;
@@ -32,8 +43,17 @@ public class UserService : IUserService
         var user = await _unitOfWork.Repository<AppUser>().GetByIdAsync(id);
         if (user is null) return null;
 
+        // Re-verify the (possibly new) email against Clockify before saving locally.
+        var clockifyUserId = await _clockify.FindUserIdByEmailAsync(email);
+        if (clockifyUserId is null)
+        {
+            throw new InvalidOperationException(
+                $"No Clockify user found with email '{email}'. Cannot update.");
+        }
+
         user.Name = name;
         user.Email = email;
+        user.ClockifyUserId = clockifyUserId;
         _unitOfWork.Repository<AppUser>().Update(user);
         await _unitOfWork.SaveChangesAsync();
         return user;

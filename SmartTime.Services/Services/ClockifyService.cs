@@ -26,41 +26,30 @@ public class ClockifyService : IClockifyService
 
     public async Task<string> GetCurrentUserIdAsync()
     {
-    var body = await _http.GetStringAsync("user");
-    var user = JsonSerializer.Deserialize<ClockifyUserDto>(body, JsonOptions);
-    return user!.Id;
+        var body = await _http.GetStringAsync("user");
+        var user = JsonSerializer.Deserialize<ClockifyUserDto>(body, JsonOptions);
+        return user!.Id;
     }
-    
+
     public async Task<string?> FindUserIdByEmailAsync(string email)
     {
         var body = await _http.GetStringAsync($"workspaces/{_settings.WorkspaceId}/users");
         var users = ParseList<ClockifyUserDto>(body);
-
         return users.FirstOrDefault(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase))?.Id;
     }
 
     public async Task<string> EnsureProjectAsync(string projectName)
     {
-        var listBody = await _http.GetStringAsync(
-            $"workspaces/{_settings.WorkspaceId}/projects?page-size=200");
+        var listBody = await _http.GetStringAsync($"workspaces/{_settings.WorkspaceId}/projects?page-size=200");
         var existing = ParseList<ClockifyProjectDto>(listBody);
 
-        var match = existing.FirstOrDefault(p =>
-            string.Equals(p.Name, projectName, StringComparison.OrdinalIgnoreCase));
-        if (match is not null)
-        {
-            return match.Id;
-        }
+        var match = existing.FirstOrDefault(p => string.Equals(p.Name, projectName, StringComparison.OrdinalIgnoreCase));
+        if (match is not null) return match.Id;
 
-        var response = await _http.PostAsJsonAsync(
-            $"workspaces/{_settings.WorkspaceId}/projects",
-            new CreateProjectRequest(projectName));
-
+        var response = await _http.PostAsJsonAsync($"workspaces/{_settings.WorkspaceId}/projects", new CreateProjectRequest(projectName));
         var createBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-        {
             throw new HttpRequestException($"Clockify POST project failed ({(int)response.StatusCode}): {createBody}");
-        }
 
         var created = JsonSerializer.Deserialize<ClockifyProjectDto>(createBody, JsonOptions);
         return created!.Id;
@@ -68,31 +57,21 @@ public class ClockifyService : IClockifyService
 
     public async Task<string> CreateTaskAsync(string clockifyProjectId, string taskName, decimal estimateHours, string? assigneeClockifyUserId)
     {
-        var listBody = await _http.GetStringAsync(
-            $"workspaces/{_settings.WorkspaceId}/projects/{clockifyProjectId}/tasks?page-size=200");
+        var listBody = await _http.GetStringAsync($"workspaces/{_settings.WorkspaceId}/projects/{clockifyProjectId}/tasks?page-size=200");
         var existing = ParseList<ClockifyTaskDto>(listBody);
 
-        var match = existing.FirstOrDefault(t =>
-            string.Equals(t.Name, taskName, StringComparison.OrdinalIgnoreCase));
-        if (match is not null)
-        {
-            return match.Id;
-        }
+        var match = existing.FirstOrDefault(t => string.Equals(t.Name, taskName, StringComparison.OrdinalIgnoreCase));
+        if (match is not null) return match.Id;
 
         var request = new CreateTaskRequest(
             Name: taskName,
             Estimate: ToIso8601Duration(estimateHours),
             AssigneeIds: assigneeClockifyUserId is null ? new List<string>() : new List<string> { assigneeClockifyUserId });
 
-        var response = await _http.PostAsJsonAsync(
-            $"workspaces/{_settings.WorkspaceId}/projects/{clockifyProjectId}/tasks",
-            request);
-
+        var response = await _http.PostAsJsonAsync($"workspaces/{_settings.WorkspaceId}/projects/{clockifyProjectId}/tasks", request);
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-        {
             throw new HttpRequestException($"Clockify POST task failed ({(int)response.StatusCode}): {body}");
-        }
 
         var created = JsonSerializer.Deserialize<ClockifyTaskDto>(body, JsonOptions);
         return created!.Id;
@@ -107,27 +86,50 @@ public class ClockifyService : IClockifyService
             TaskId: clockifyTaskId,
             Description: description);
 
-        var response = await _http.PostAsJsonAsync(
-            $"workspaces/{_settings.WorkspaceId}/user/{clockifyUserId}/time-entries",
-            request);
-
+        var response = await _http.PostAsJsonAsync($"workspaces/{_settings.WorkspaceId}/user/{clockifyUserId}/time-entries", request);
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
-        {
             throw new HttpRequestException($"Clockify POST time entry failed ({(int)response.StatusCode}): {body}");
-        }
 
         var created = JsonSerializer.Deserialize<ClockifyTimeEntryDto>(body, JsonOptions);
         return created!.Id;
+    }
+
+    public async Task UpdateProjectAsync(string clockifyProjectId, string newName)
+    {
+        var response = await _http.PutAsJsonAsync($"workspaces/{_settings.WorkspaceId}/projects/{clockifyProjectId}", new CreateProjectRequest(newName));
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Clockify PUT project failed ({(int)response.StatusCode}): {body}");
+    }
+
+    public async Task UpdateTaskAsync(string clockifyProjectId, string clockifyTaskId, string newName, decimal newEstimateHours)
+    {
+        var request = new CreateTaskRequest(Name: newName, Estimate: ToIso8601Duration(newEstimateHours), AssigneeIds: new List<string>());
+        var response = await _http.PutAsJsonAsync($"workspaces/{_settings.WorkspaceId}/projects/{clockifyProjectId}/tasks/{clockifyTaskId}", request);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Clockify PUT task failed ({(int)response.StatusCode}): {body}");
+    }
+
+    public async Task UpdateTimeEntryAsync(string clockifyUserId, string clockifyTimeEntryId, DateTime newStart, DateTime newEnd)
+    {
+        var request = new
+        {
+            start = newStart.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
+            end = newEnd.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)
+        };
+        var response = await _http.PutAsJsonAsync($"workspaces/{_settings.WorkspaceId}/user/{clockifyUserId}/time-entries/{clockifyTimeEntryId}", request);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException($"Clockify PUT time entry failed ({(int)response.StatusCode}): {body}");
     }
 
     private static List<T> ParseList<T>(string json)
     {
         var trimmed = json.TrimStart();
         if (trimmed.StartsWith('['))
-        {
             return JsonSerializer.Deserialize<List<T>>(json, JsonOptions) ?? new List<T>();
-        }
 
         var wrapped = JsonSerializer.Deserialize<ClockifyPagedResult<T>>(json, JsonOptions);
         return wrapped?.Value ?? new List<T>();

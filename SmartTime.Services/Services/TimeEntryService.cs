@@ -7,10 +7,12 @@ namespace SmartTime.Services.Services;
 public class TimeEntryService : ITimeEntryService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClockifyService _clockify;
 
-    public TimeEntryService(IUnitOfWork unitOfWork)
+    public TimeEntryService(IUnitOfWork unitOfWork, IClockifyService clockify)
     {
         _unitOfWork = unitOfWork;
+        _clockify = clockify;
     }
 
     public async Task<IReadOnlyList<TimeEntry>> GetAllAsync() =>
@@ -21,7 +23,23 @@ public class TimeEntryService : ITimeEntryService
 
     public async Task<TimeEntry> CreateAsync(int taskId, DateTime start, DateTime end)
     {
-        var entry = new TimeEntry { TaskId = taskId, Start = start, End = end };
+        var task = await _unitOfWork.Repository<WorkTask>().GetByIdAsync(taskId)
+            ?? throw new InvalidOperationException($"Task {taskId} not found.");
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(task.ProjectId)
+            ?? throw new InvalidOperationException($"Project for task {taskId} not found.");
+
+        if (task.ClockifyTaskId is null || project.ClockifyProjectId is null)
+        {
+            throw new InvalidOperationException($"Task '{task.Name}' or its project has not been synced to Clockify yet.");
+        }
+
+        var apiOwnerClockifyUserId = await _clockify.GetCurrentUserIdAsync();
+
+        var clockifyTimeEntryId = await _clockify.CreateTimeEntryAsync(
+            apiOwnerClockifyUserId, project.ClockifyProjectId, task.ClockifyTaskId, start, end,
+            $"{task.Name} ({project.Name})");
+
+        var entry = new TimeEntry { TaskId = taskId, Start = start, End = end, ClockifyTimeEntryId = clockifyTimeEntryId };
         await _unitOfWork.Repository<TimeEntry>().AddAsync(entry);
         await _unitOfWork.SaveChangesAsync();
         return entry;
@@ -31,6 +49,12 @@ public class TimeEntryService : ITimeEntryService
     {
         var entry = await _unitOfWork.Repository<TimeEntry>().GetByIdAsync(id);
         if (entry is null) return null;
+
+        if (entry.ClockifyTimeEntryId is not null)
+        {
+            var apiOwnerClockifyUserId = await _clockify.GetCurrentUserIdAsync();
+            await _clockify.UpdateTimeEntryAsync(apiOwnerClockifyUserId, entry.ClockifyTimeEntryId, start, end);
+        }
 
         entry.TaskId = taskId;
         entry.Start = start;

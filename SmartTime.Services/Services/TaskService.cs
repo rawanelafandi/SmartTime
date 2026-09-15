@@ -7,10 +7,12 @@ namespace SmartTime.Services.Services;
 public class TaskService : ITaskService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClockifyService _clockify;
 
-    public TaskService(IUnitOfWork unitOfWork)
+    public TaskService(IUnitOfWork unitOfWork, IClockifyService clockify)
     {
         _unitOfWork = unitOfWork;
+        _clockify = clockify;
     }
 
     public async Task<IReadOnlyList<WorkTask>> GetAllAsync() =>
@@ -21,12 +23,26 @@ public class TaskService : ITaskService
 
     public async Task<WorkTask> CreateAsync(string name, decimal estimateHours, int projectId, int assignedUserId)
     {
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(projectId)
+            ?? throw new InvalidOperationException($"Project {projectId} not found.");
+        var user = await _unitOfWork.Repository<AppUser>().GetByIdAsync(assignedUserId)
+            ?? throw new InvalidOperationException($"User {assignedUserId} not found.");
+
+        if (project.ClockifyProjectId is null)
+        {
+            throw new InvalidOperationException($"Project '{project.Name}' has not been synced to Clockify yet.");
+        }
+
+        var clockifyTaskId = await _clockify.CreateTaskAsync(
+            project.ClockifyProjectId, name, estimateHours, user.ClockifyUserId);
+
         var task = new WorkTask
         {
             Name = name,
             EstimateHours = estimateHours,
             ProjectId = projectId,
-            AssignedUserId = assignedUserId
+            AssignedUserId = assignedUserId,
+            ClockifyTaskId = clockifyTaskId
         };
         await _unitOfWork.Repository<WorkTask>().AddAsync(task);
         await _unitOfWork.SaveChangesAsync();
@@ -37,6 +53,14 @@ public class TaskService : ITaskService
     {
         var task = await _unitOfWork.Repository<WorkTask>().GetByIdAsync(id);
         if (task is null) return null;
+
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(projectId)
+            ?? throw new InvalidOperationException($"Project {projectId} not found.");
+
+        if (task.ClockifyTaskId is not null && project.ClockifyProjectId is not null)
+        {
+            await _clockify.UpdateTaskAsync(project.ClockifyProjectId, task.ClockifyTaskId, name, estimateHours);
+        }
 
         task.Name = name;
         task.EstimateHours = estimateHours;
