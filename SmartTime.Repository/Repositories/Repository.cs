@@ -20,6 +20,16 @@ public class Repository<T> : IRepository<T> where T : class
 
     public async Task<IReadOnlyList<T>> GetAllAsync() => await _dbSet.AsNoTracking().ToListAsync();
 
+    public async Task<IReadOnlyList<T>> GetAllAsync(params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet.AsNoTracking();
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        return await query.ToListAsync();
+    }
+
     public async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate) =>
         await _dbSet.Where(predicate).ToListAsync();
 

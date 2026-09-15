@@ -10,3 +10,4 @@ D:\test\SmartTime\SmartTime.Repository\obj\Debug\net8.0\SmartTime.Repository.dll
 D:\test\SmartTime\SmartTime.Repository\obj\Debug\net8.0\refint\SmartTime.Repository.dll
 D:\test\SmartTime\SmartTime.Repository\obj\Debug\net8.0\SmartTime.Repository.pdb
 D:\test\SmartTime\SmartTime.Repository\obj\Debug\net8.0\ref\SmartTime.Repository.dll
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net8.0\SmartTime.Repository.sourcelink.json

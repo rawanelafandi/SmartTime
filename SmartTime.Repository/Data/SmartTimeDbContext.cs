@@ -36,16 +36,6 @@ public class SmartTimeDbContext : DbContext
 
         modelBuilder.Entity<TimeEntry>(e =>
         {
-            e.HasOne(te => te.User)
-                .WithMany(u => u.TimeEntries)
-                .HasForeignKey(te => te.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            e.HasOne(te => te.Project)
-                .WithMany()
-                .HasForeignKey(te => te.ProjectId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             e.HasOne(te => te.Task)
                 .WithMany(t => t.TimeEntries)
                 .HasForeignKey(te => te.TaskId)

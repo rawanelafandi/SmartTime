@@ -13,3 +13,4 @@ D:\test\SmartTime\SmartTime.Factory\obj\Debug\net8.0\SmartTime.Factory.dll
 D:\test\SmartTime\SmartTime.Factory\obj\Debug\net8.0\refint\SmartTime.Factory.dll
 D:\test\SmartTime\SmartTime.Factory\obj\Debug\net8.0\SmartTime.Factory.pdb
 D:\test\SmartTime\SmartTime.Factory\obj\Debug\net8.0\ref\SmartTime.Factory.dll
+D:\test\SmartTime\SmartTime.Factory\obj\Debug\net8.0\SmartTime.Factory.sourcelink.json

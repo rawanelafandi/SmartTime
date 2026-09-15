@@ -15,3 +15,4 @@ D:\test\SmartTime\SmartTime.Services\obj\Debug\net8.0\SmartTime.Services.dll
 D:\test\SmartTime\SmartTime.Services\obj\Debug\net8.0\refint\SmartTime.Services.dll
 D:\test\SmartTime\SmartTime.Services\obj\Debug\net8.0\SmartTime.Services.pdb
 D:\test\SmartTime\SmartTime.Services\obj\Debug\net8.0\ref\SmartTime.Services.dll
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net8.0\SmartTime.Services.sourcelink.json

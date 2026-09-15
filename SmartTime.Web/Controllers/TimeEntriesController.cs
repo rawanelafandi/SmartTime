@@ -18,12 +18,12 @@ public class TimeEntriesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var entries = await _unitOfWork.TimeEntries.GetAllAsync();
+        var entries = await _unitOfWork.TimeEntries.GetAllAsync(e => e.Task, e => e.Task.Project, e => e.Task.AssignedUser);
         return Ok(entries.Select(e => new
         {
             e.Id,
-            User = e.User?.Name,
-            Project = e.Project?.Name,
+            User = e.Task?.AssignedUser?.Name,
+            Project = e.Task?.Project?.Name,
             Task = e.Task?.Name,
             e.Start,
             e.End,

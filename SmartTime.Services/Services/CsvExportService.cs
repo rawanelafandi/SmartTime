@@ -19,23 +19,17 @@ public class CsvExportService : ICsvExportService
 
     public async Task<byte[]> ExportTimeEntriesCsvAsync()
     {
-        var entries = await _unitOfWork.TimeEntries.GetAllAsync();
-        var tasks = await _unitOfWork.Tasks.GetAllAsync();
-        var users = await _unitOfWork.Users.GetAllAsync();
-        var projects = await _unitOfWork.Projects.GetAllAsync();
+        var entries = await _unitOfWork.TimeEntries.GetAllAsync(e => e.Task, e => e.Task.Project, e => e.Task.AssignedUser);
 
-        var taskById = tasks.ToDictionary(t => t.Id);
-        var userById = users.ToDictionary(u => u.Id);
-        var projectById = projects.ToDictionary(p => p.Id);
-
+        // Group by task, since Project and AssignedUser are now reached through Task.
         var rows = entries
-            .GroupBy(e => (e.UserId, e.ProjectId, e.TaskId))
+            .GroupBy(e => e.TaskId)
             .Select(g =>
             {
-                var task = taskById[g.Key.TaskId];
+                var task = g.First().Task;
                 return new TimeEntryReportRow(
-                    User: userById[g.Key.UserId].Name,
-                    Project: projectById[g.Key.ProjectId].Name,
+                    User: task.AssignedUser.Name,
+                    Project: task.Project.Name,
                     Task: task.Name,
                     OriginalEstimateHours: task.EstimateHours,
                     TimeSpentHours: Math.Round(g.Sum(e => e.DurationHours), 2));

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartTime.Factory")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5c6b4ef8ec52fbc164148d6d41cbd63186236a65")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartTime.Factory")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartTime.Factory")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

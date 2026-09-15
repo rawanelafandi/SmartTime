@@ -21,6 +21,11 @@ public class TimeTrackingService : ITimeTrackingService
 
     public async Task<int> SyncSampleDataAsync()
     {
+        // Clockify's free/trial plan only allows creating time entries for the
+        // account that owns the API key, so every entry is pushed under this
+        // user on Clockify - the correct assignee is still stored locally via Task.AssignedUser.
+        var apiOwnerClockifyUserId = await _clockify.GetCurrentUserIdAsync();
+
         var userCache = new Dictionary<string, AppUser>();
         var projectCache = new Dictionary<string, Project>();
         var taskCache = new Dictionary<(string Project, string Task), WorkTask>();
@@ -80,10 +85,9 @@ public class TimeTrackingService : ITimeTrackingService
         {
             var project = projectCache[seedEntry.Project];
             var task = taskCache[(seedEntry.Project, seedEntry.TaskName)];
-            var user = userCache[seedEntry.UserName];
 
             var clockifyTimeEntryId = await _clockify.CreateTimeEntryAsync(
-                user.ClockifyUserId!,
+                apiOwnerClockifyUserId,
                 project.ClockifyProjectId!,
                 task.ClockifyTaskId!,
                 seedEntry.Start,
@@ -92,8 +96,6 @@ public class TimeTrackingService : ITimeTrackingService
 
             var timeEntry = new TimeEntry
             {
-                User = user,
-                Project = project,
                 Task = task,
                 Start = seedEntry.Start,
                 End = seedEntry.End,

@@ -126,3 +126,4 @@ D:\test\SmartTime\SmartTime.Web\obj\Debug\net8.0\refint\SmartTime.Web.dll
 D:\test\SmartTime\SmartTime.Web\obj\Debug\net8.0\SmartTime.Web.pdb
 D:\test\SmartTime\SmartTime.Web\obj\Debug\net8.0\SmartTime.Web.genruntimeconfig.cache
 D:\test\SmartTime\SmartTime.Web\obj\Debug\net8.0\ref\SmartTime.Web.dll
+D:\test\SmartTime\SmartTime.Web\obj\Debug\net8.0\SmartTime.Web.sourcelink.json

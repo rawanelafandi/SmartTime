@@ -4,12 +4,6 @@ public class TimeEntry
 {
     public int Id { get; set; }
 
-    public int UserId { get; set; }
-    public AppUser User { get; set; } = null!;
-
-    public int ProjectId { get; set; }
-    public Project Project { get; set; } = null!;
-
     public int TaskId { get; set; }
     public WorkTask Task { get; set; } = null!;
 
