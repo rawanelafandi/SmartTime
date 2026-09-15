@@ -1,13 +1,13 @@
 using SmartTime.Repository.Entities;
 using SmartTime.Repository.Interfaces;
 using SmartTime.Services.Interfaces;
-using SmartTime.Services.SeedData;
 
 namespace SmartTime.Services.Services;
 
-// Orchestrates the whole "push sample data" workflow: for each user/project/
-// task/time-entry in the sample set, push it to Clockify first, then persist
-// the local record (with the returned Clockify id attached) via the Unit of Work.
+// Scans the local database for records that haven't been pushed to Clockify yet
+// (identified by a null ClockifyXId) and syncs just those - so you can add
+// users/projects/tasks/time-entries via normal CRUD endpoints, then call this
+// to push whatever's new since the last sync.
 public class TimeTrackingService : ITimeTrackingService
 {
     private readonly IClockifyService _clockify;
@@ -22,90 +22,83 @@ public class TimeTrackingService : ITimeTrackingService
     public async Task<int> SyncSampleDataAsync()
     {
         // Clockify's free/trial plan only allows creating time entries for the
-        // account that owns the API key, so every entry is pushed under this
-        // user on Clockify - the correct assignee is still stored locally via Task.AssignedUser.
+        // account that owns the API key - every entry is pushed under this
+        // user on Clockify, while the correct assignee stays on Task.AssignedUser locally.
         var apiOwnerClockifyUserId = await _clockify.GetCurrentUserIdAsync();
 
-        var userCache = new Dictionary<string, AppUser>();
-        var projectCache = new Dictionary<string, Project>();
-        var taskCache = new Dictionary<(string Project, string Task), WorkTask>();
-
-        foreach (var (userName, email) in SampleDataProvider.UserEmails)
+        // 1. Users: try to resolve a ClockifyUserId for anyone missing one.
+        var unsyncedUsers = await _unitOfWork.Users.FindAsync(u => u.ClockifyUserId == null);
+        foreach (var user in unsyncedUsers)
         {
-            var clockifyUserId = await _clockify.FindUserIdByEmailAsync(email);
-
-            var user = new AppUser
+            var clockifyUserId = await _clockify.FindUserIdByEmailAsync(user.Email);
+            if (clockifyUserId is not null)
             {
-                Name = userName,
-                Email = email,
-                ClockifyUserId = clockifyUserId
-            };
-
-            await _unitOfWork.Users.AddAsync(user);
-            userCache[userName] = user;
+                user.ClockifyUserId = clockifyUserId;
+                _unitOfWork.Users.Update(user);
+            }
         }
-
         await _unitOfWork.SaveChangesAsync();
 
-        foreach (var seedTask in SampleDataProvider.Tasks)
+        // 2. Projects: create/find on Clockify for anyone missing a ClockifyProjectId.
+        var unsyncedProjects = await _unitOfWork.Projects.FindAsync(p => p.ClockifyProjectId == null);
+        foreach (var project in unsyncedProjects)
         {
-            if (!projectCache.TryGetValue(seedTask.Project, out var project))
+            project.ClockifyProjectId = await _clockify.EnsureProjectAsync(project.Name);
+            _unitOfWork.Projects.Update(project);
+        }
+        await _unitOfWork.SaveChangesAsync();
+
+        // 3. Tasks: needs its project already synced.
+        var unsyncedTasks = await _unitOfWork.Tasks.FindAsync(t => t.ClockifyTaskId == null);
+        foreach (var task in unsyncedTasks)
+        {
+            var project = await _unitOfWork.Projects.GetByIdAsync(task.ProjectId);
+            var assignee = await _unitOfWork.Users.GetByIdAsync(task.AssignedUserId);
+
+            if (project?.ClockifyProjectId is null)
             {
-                var clockifyProjectId = await _clockify.EnsureProjectAsync(seedTask.Project);
-                project = new Project { Name = seedTask.Project, ClockifyProjectId = clockifyProjectId };
-                await _unitOfWork.Projects.AddAsync(project);
-                projectCache[seedTask.Project] = project;
+                continue; // project isn't synced yet - skip until it is
             }
 
-            var assignee = userCache[seedTask.AssignedUserName];
+            task.ClockifyTaskId = await _clockify.CreateTaskAsync(
+                project.ClockifyProjectId,
+                task.Name,
+                task.EstimateHours,
+                assignee?.ClockifyUserId);
 
-            var clockifyTaskId = await _clockify.CreateTaskAsync(
-                project.ClockifyProjectId!,
-                seedTask.TaskName,
-                seedTask.EstimateHours,
-                assignee.ClockifyUserId);
-
-            var task = new WorkTask
-            {
-                Name = seedTask.TaskName,
-                EstimateHours = seedTask.EstimateHours,
-                Project = project,
-                AssignedUser = assignee,
-                ClockifyTaskId = clockifyTaskId
-            };
-
-            await _unitOfWork.Tasks.AddAsync(task);
-            taskCache[(seedTask.Project, seedTask.TaskName)] = task;
+            _unitOfWork.Tasks.Update(task);
         }
-
         await _unitOfWork.SaveChangesAsync();
 
+        // 4. Time entries: needs its task already synced.
+        var unsyncedEntries = await _unitOfWork.TimeEntries.FindAsync(e => e.ClockifyTimeEntryId == null);
         var entriesCreated = 0;
-        foreach (var seedEntry in SampleDataProvider.TimeEntries)
+
+        foreach (var entry in unsyncedEntries)
         {
-            var project = projectCache[seedEntry.Project];
-            var task = taskCache[(seedEntry.Project, seedEntry.TaskName)];
-
-            var clockifyTimeEntryId = await _clockify.CreateTimeEntryAsync(
-                apiOwnerClockifyUserId,
-                project.ClockifyProjectId!,
-                task.ClockifyTaskId!,
-                seedEntry.Start,
-                seedEntry.End,
-                $"{seedEntry.TaskName} ({seedEntry.Project})");
-
-            var timeEntry = new TimeEntry
+            var task = await _unitOfWork.Tasks.GetByIdAsync(entry.TaskId);
+            if (task?.ClockifyTaskId is null)
             {
-                Task = task,
-                Start = seedEntry.Start,
-                End = seedEntry.End,
-                ClockifyTimeEntryId = clockifyTimeEntryId
-            };
+                continue; // task isn't synced yet - skip until it is
+            }
 
-            await _unitOfWork.TimeEntries.AddAsync(timeEntry);
+            var project = await _unitOfWork.Projects.GetByIdAsync(task.ProjectId);
+            if (project?.ClockifyProjectId is null)
+            {
+                continue;
+            }
+
+            entry.ClockifyTimeEntryId = await _clockify.CreateTimeEntryAsync(
+                apiOwnerClockifyUserId,
+                project.ClockifyProjectId,
+                task.ClockifyTaskId,
+                entry.Start,
+                entry.End,
+                $"{task.Name} ({project.Name})");
+
+            _unitOfWork.TimeEntries.Update(entry);
             entriesCreated++;
         }
-
         await _unitOfWork.SaveChangesAsync();
 
         return entriesCreated;

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using SmartTime.Repository.Entities;
 using SmartTime.Repository.Interfaces;
+using SmartTime.Web.DTOs;
 
 namespace SmartTime.Web.Controllers;
 
@@ -14,7 +16,6 @@ public class TimeEntriesController : ControllerBase
         _unitOfWork = unitOfWork;
     }
 
-    // GET /api/timeentries
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -30,5 +31,52 @@ public class TimeEntriesController : ControllerBase
             e.DurationHours,
             e.ClockifyTimeEntryId
         }));
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var entry = await _unitOfWork.TimeEntries.GetByIdAsync(id);
+        if (entry is null) return NotFound();
+        return Ok(entry);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateTimeEntryRequest request)
+    {
+        var entry = new TimeEntry
+        {
+            TaskId = request.TaskId,
+            Start = request.Start,
+            End = request.End
+        };
+        await _unitOfWork.TimeEntries.AddAsync(entry);
+        await _unitOfWork.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id = entry.Id }, entry);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateTimeEntryRequest request)
+    {
+        var entry = await _unitOfWork.TimeEntries.GetByIdAsync(id);
+        if (entry is null) return NotFound();
+
+        entry.TaskId = request.TaskId;
+        entry.Start = request.Start;
+        entry.End = request.End;
+        _unitOfWork.TimeEntries.Update(entry);
+        await _unitOfWork.SaveChangesAsync();
+        return Ok(entry);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var entry = await _unitOfWork.TimeEntries.GetByIdAsync(id);
+        if (entry is null) return NotFound();
+
+        _unitOfWork.TimeEntries.Remove(entry);
+        await _unitOfWork.SaveChangesAsync();
+        return NoContent();
     }
 }
