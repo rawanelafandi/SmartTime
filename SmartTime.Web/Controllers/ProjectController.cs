@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SmartTime.Repository.Entities;
-using SmartTime.Repository.Interfaces;
+using SmartTime.Services.Interfaces;
 using SmartTime.Web.DTOs;
 
 namespace SmartTime.Web.Controllers;
@@ -9,24 +8,24 @@ namespace SmartTime.Web.Controllers;
 [Route("api/[controller]")]
 public class ProjectController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IProjectService _projectService;
 
-    public ProjectController(IUnitOfWork unitOfWork)
+    public ProjectController(IProjectService projectService)
     {
-        _unitOfWork = unitOfWork;
+        _projectService = projectService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var projects = await _unitOfWork.Repository<Project>().GetAllAsync();
+        var projects = await _projectService.GetAllAsync();
         return Ok(projects);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
+        var project = await _projectService.GetByIdAsync(id);
         if (project is null) return NotFound();
         return Ok(project);
     }
@@ -34,32 +33,23 @@ public class ProjectController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProjectRequest request)
     {
-        var project = new Project { Name = request.Name };
-        await _unitOfWork.Repository<Project>().AddAsync(project);
-        await _unitOfWork.SaveChangesAsync();
+        var project = await _projectService.CreateAsync(request.Name);
         return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectRequest request)
     {
-        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
+        var project = await _projectService.UpdateAsync(id, request.Name);
         if (project is null) return NotFound();
-
-        project.Name = request.Name;
-        _unitOfWork.Repository<Project>().Update(project);
-        await _unitOfWork.SaveChangesAsync();
         return Ok(project);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
-        if (project is null) return NotFound();
-
-        _unitOfWork.Repository<Project>().Remove(project);
-        await _unitOfWork.SaveChangesAsync();
+        var deleted = await _projectService.DeleteAsync(id);
+        if (!deleted) return NotFound();
         return NoContent();
     }
 }

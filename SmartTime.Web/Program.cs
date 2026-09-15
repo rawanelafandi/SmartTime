@@ -31,7 +31,10 @@ builder.Services.AddHttpClient<IClockifyService, ClockifyService>()
 // --- Application services ---
 builder.Services.AddScoped<ITimeTrackingService, TimeTrackingService>();
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
-
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<ITimeEntryService, TimeEntryService>();
 // --- Export strategy + factory (bonus: strategy & factory patterns) ---
 builder.Services.AddScoped<IExportStrategy, CsvExportStrategy>();
 builder.Services.AddScoped<IExportStrategyFactory, ExportStrategyFactory>();
