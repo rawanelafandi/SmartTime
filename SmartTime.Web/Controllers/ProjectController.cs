@@ -7,11 +7,11 @@ namespace SmartTime.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProjectsController : ControllerBase
+public class ProjectController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public ProjectsController(IUnitOfWork unitOfWork)
+    public ProjectController(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
@@ -19,14 +19,14 @@ public class ProjectsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var projects = await _unitOfWork.Projects.GetAllAsync();
+        var projects = await _unitOfWork.Repository<Project>().GetAllAsync();
         return Ok(projects);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var project = await _unitOfWork.Projects.GetByIdAsync(id);
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
         if (project is null) return NotFound();
         return Ok(project);
     }
@@ -35,7 +35,7 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateProjectRequest request)
     {
         var project = new Project { Name = request.Name };
-        await _unitOfWork.Projects.AddAsync(project);
+        await _unitOfWork.Repository<Project>().AddAsync(project);
         await _unitOfWork.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
     }
@@ -43,11 +43,11 @@ public class ProjectsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectRequest request)
     {
-        var project = await _unitOfWork.Projects.GetByIdAsync(id);
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
         if (project is null) return NotFound();
 
         project.Name = request.Name;
-        _unitOfWork.Projects.Update(project);
+        _unitOfWork.Repository<Project>().Update(project);
         await _unitOfWork.SaveChangesAsync();
         return Ok(project);
     }
@@ -55,10 +55,10 @@ public class ProjectsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var project = await _unitOfWork.Projects.GetByIdAsync(id);
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(id);
         if (project is null) return NotFound();
 
-        _unitOfWork.Projects.Remove(project);
+        _unitOfWork.Repository<Project>().Remove(project);
         await _unitOfWork.SaveChangesAsync();
         return NoContent();
     }

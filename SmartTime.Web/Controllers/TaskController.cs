@@ -7,11 +7,11 @@ namespace SmartTime.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TasksController : ControllerBase
+public class TaskController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public TasksController(IUnitOfWork unitOfWork)
+    public TaskController(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
@@ -19,7 +19,7 @@ public class TasksController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var tasks = await _unitOfWork.Tasks.GetAllAsync(t => t.Project, t => t.AssignedUser);
+        var tasks = await _unitOfWork.Repository<WorkTask>().GetAllAsync(t => t.Project, t => t.AssignedUser);
         return Ok(tasks.Select(t => new
         {
             t.Id,
@@ -34,7 +34,7 @@ public class TasksController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var task = await _unitOfWork.Tasks.GetByIdAsync(id);
+        var task = await _unitOfWork.Repository<WorkTask>().GetByIdAsync(id);
         if (task is null) return NotFound();
         return Ok(task);
     }
@@ -49,7 +49,7 @@ public class TasksController : ControllerBase
             ProjectId = request.ProjectId,
             AssignedUserId = request.AssignedUserId
         };
-        await _unitOfWork.Tasks.AddAsync(task);
+        await _unitOfWork.Repository<WorkTask>().AddAsync(task);
         await _unitOfWork.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
     }
@@ -57,14 +57,14 @@ public class TasksController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskRequest request)
     {
-        var task = await _unitOfWork.Tasks.GetByIdAsync(id);
+        var task = await _unitOfWork.Repository<WorkTask>().GetByIdAsync(id);
         if (task is null) return NotFound();
 
         task.Name = request.Name;
         task.EstimateHours = request.EstimateHours;
         task.ProjectId = request.ProjectId;
         task.AssignedUserId = request.AssignedUserId;
-        _unitOfWork.Tasks.Update(task);
+        _unitOfWork.Repository<WorkTask>().Update(task);
         await _unitOfWork.SaveChangesAsync();
         return Ok(task);
     }
@@ -72,10 +72,10 @@ public class TasksController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var task = await _unitOfWork.Tasks.GetByIdAsync(id);
+        var task = await _unitOfWork.Repository<WorkTask>().GetByIdAsync(id);
         if (task is null) return NotFound();
 
-        _unitOfWork.Tasks.Remove(task);
+        _unitOfWork.Repository<WorkTask>().Remove(task);
         await _unitOfWork.SaveChangesAsync();
         return NoContent();
     }

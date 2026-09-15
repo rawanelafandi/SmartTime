@@ -1,6 +1,7 @@
 using SmartTime.Factory;
 using SmartTime.Factory.Enums;
 using SmartTime.Factory.Interfaces;
+using SmartTime.Repository.Entities;
 using SmartTime.Repository.Interfaces;
 using SmartTime.Services.Interfaces;
 
@@ -19,9 +20,8 @@ public class CsvExportService : ICsvExportService
 
     public async Task<byte[]> ExportTimeEntriesCsvAsync()
     {
-        var entries = await _unitOfWork.TimeEntries.GetAllAsync(e => e.Task, e => e.Task.Project, e => e.Task.AssignedUser);
+        var entries = await _unitOfWork.Repository<TimeEntry>().GetAllAsync(e => e.Task, e => e.Task.Project, e => e.Task.AssignedUser);
 
-        // Group by task, since Project and AssignedUser are now reached through Task.
         var rows = entries
             .GroupBy(e => e.TaskId)
             .Select(g =>
