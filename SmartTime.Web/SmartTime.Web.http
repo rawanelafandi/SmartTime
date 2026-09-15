@@ -1,0 +1,6 @@
+@SmartTime.Web_HostAddress = http://localhost:5111
+
+GET {{SmartTime.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

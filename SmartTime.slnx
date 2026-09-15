@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SmartTime.Factory/SmartTime.Factory.csproj" />
+  <Project Path="SmartTime.Repository/SmartTime.Repository.csproj" />
+  <Project Path="SmartTime.Services/SmartTime.Services.csproj" />
+  <Project Path="SmartTime.Web/SmartTime.Web.csproj" />
+</Solution>

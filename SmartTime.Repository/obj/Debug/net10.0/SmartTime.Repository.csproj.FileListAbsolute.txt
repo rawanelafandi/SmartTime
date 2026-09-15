@@ -1,0 +1,12 @@
+D:\test\SmartTime\SmartTime.Repository\bin\Debug\net10.0\SmartTime.Repository.deps.json
+D:\test\SmartTime\SmartTime.Repository\bin\Debug\net10.0\SmartTime.Repository.dll
+D:\test\SmartTime\SmartTime.Repository\bin\Debug\net10.0\SmartTime.Repository.pdb
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.csproj.AssemblyReference.cache
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.GeneratedMSBuildEditorConfig.editorconfig
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.AssemblyInfoInputs.cache
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.AssemblyInfo.cs
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.csproj.CoreCompileInputs.cache
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.dll
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\refint\SmartTime.Repository.dll
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\SmartTime.Repository.pdb
+D:\test\SmartTime\SmartTime.Repository\obj\Debug\net10.0\ref\SmartTime.Repository.dll

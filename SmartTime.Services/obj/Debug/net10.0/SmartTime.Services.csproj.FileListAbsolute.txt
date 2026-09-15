@@ -1,0 +1,17 @@
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.csproj.AssemblyReference.cache
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.GeneratedMSBuildEditorConfig.editorconfig
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.AssemblyInfoInputs.cache
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.AssemblyInfo.cs
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.csproj.CoreCompileInputs.cache
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Services.deps.json
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Services.dll
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Services.pdb
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Factory.dll
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Repository.dll
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Repository.pdb
+D:\test\SmartTime\SmartTime.Services\bin\Debug\net10.0\SmartTime.Factory.pdb
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTim.6D71B119.Up2Date
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.dll
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\refint\SmartTime.Services.dll
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\SmartTime.Services.pdb
+D:\test\SmartTime\SmartTime.Services\obj\Debug\net10.0\ref\SmartTime.Services.dll
